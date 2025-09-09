@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Management System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div id="loadingOverlay" class="hidden">
+        <div style="color: white; font-size: 1.5rem;">Loading...</div>
+    </div>
+    <div class="container">
+        <!-- Header section -->
+        <header class="header">
+            <h1><i class="fas fa-graduation-cap"></i> Student Management System</h1>
+            <button id="addStudentBtn" class="btn btn-primary" aria-label="Add new student">
+                <i class="fas fa-plus"></i> Add Student
+            </button>
+        </header>
+
+        <!-- Message alert -->
+        <% if (message && message.trim() !== '') { %>
+        <div id="messageAlert" class="alert">
+            <span id="messageText"><%= message %></span>
+            <span class="close-btn" aria-label="Close alert">&times;</span>
+        </div>
+        <% } %>
+
+        <!-- Search section -->
+        <div class="filters">
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search by name, email, course, or batch..." aria-label="Search students">
+                <button id="searchBtn" class="btn btn-secondary" aria-label="Search">
+                    <i class="fas fa-search"></i> Search
+                </button>
+                <button id="clearBtn" class="btn btn-outline" aria-label="Clear search">
+                    <i class="fas fa-times"></i> Clear
+                </button>
+            </div>
+        </div>
+
+        <!-- Students table -->
+        <div class="table-container">
+            <div class="table-header">
+                <h3>Student Records</h3>
+            </div>
+            <table id="studentsTable">
+                <thead>
+                    <tr>
+                        <th class="sortable" data-field="name">
+                            Name <i class="fas fa-sort"></i>
+                        </th>
+                        <th class="sortable" data-field="age">
+                            Age <i class="fas fa-sort"></i>
+                        </th>
+                        <th class="sortable" data-field="email">
+                            Email <i class="fas fa-sort"></i>
+                        </th>
+                        <th class="sortable" data-field="batch">
+                            Batch <i class="fas fa-sort"></i>
+                        </th>
+                        <th class="sortable" data-field="course">
+                            Course <i class="fas fa-sort"></i>
+                        </th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% students.forEach(student => { %>
+                    <tr data-id="<%= student._id %>">
+                        <td><%= student.name %></td>
+                        <td><%= student.age %></td>
+                        <td><%= student.email %></td>
+                        <td><%= student.batch %></td>
+                        <td><%= student.course %></td>
+                        <td class="actions">
+                            <button class="btn-icon edit-btn" data-id="<%= student._id %>" aria-label="Edit student">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn-icon delete-btn" data-id="<%= student._id %>" aria-label="Delete student">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+            <div id="noResults" class="no-results hidden">
+                <i class="fas fa-search"></i>
+                <p>No students found matching your search criteria</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Student Modal -->
+    <div id="addStudentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add New Student</h2>
+                <span class="close" aria-label="Close modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="addStudentForm" action="/students" method="POST">
+                    <div class="form-group">
+                        <label for="name">Full Name</label>
+                        <input type="text" id="name" name="name" required minlength="2" placeholder="Enter student's full name">
+                        <span class="error-message"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="age">Age</label>
+                        <input type="number" id="age" name="age" required min="15" max="100" placeholder="Enter age">
+                        <span class="error-message"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" required placeholder="Enter email address">
+                        <span class="error-message"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="batch">Batch</label>
+                        <input type="text" id="batch" name="batch" required placeholder="e.g., BCR 71">
+                        <span class="error-message"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="course">Course</label>
+                        <input type="text" id="course" name="course" required placeholder="e.g., Computer Science">
+                        <span class="error-message"></span>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline modal-cancel" aria-label="Cancel">Cancel</button>
+                        <button type="submit" class="btn btn-primary" aria-label="Add student">
+                            <i class="fas fa-plus"></i> Add Student
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Student Modal -->
+    <div id="editStudentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Student Information</h2>
+                <span class="close" aria-label="Close modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="editStudentForm" method="POST">
+                    <input type="hidden" id="editStudentId" name="id">
+                    <div class="form-group">
+                        <label for="editName">Full Name</label>
+                        <input type="text" id="editName" name="name" required minlength="2">
+                        <span class="error-message"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="editAge">Age</label>
+                        <input type="number" id="editAge" name="age" required min="15" max="100">
+                        <span class="error-message"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="editEmail">Email Address</label>
+                        <input type="email" id="editEmail" name="email" required>
+                        <span class="error-message"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="editBatch">Batch</label>
+                        <input type="text" id="editBatch" name="batch" required>
+                        <span class="error-message"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="editCourse">Course</label>
+                        <input type="text" id="editCourse" name="course" required>
+                        <span class="error-message"></span>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline modal-cancel" aria-label="Cancel">Cancel</button>
+                        <button type="submit" class="btn btn-primary" aria-label="Update student">
+                            <i class="fas fa-save"></i> Update Student
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteConfirmModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Confirm Deletion</h2>
+                <span class="close" aria-label="Close modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div style="text-align: center; padding: 20px;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 2.5rem; color: #e74c3c; margin-bottom: 15px;"></i>
+                    <p style="font-size: 1rem; margin-bottom: 10px; font-weight: 500;">Are you sure you want to delete this student record?</p>
+                    <p style="color: #7f8c8d; font-size: 14px;">This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline modal-cancel" aria-label="Cancel">Cancel</button>
+                    <button id="confirmDelete" class="btn btn-danger" data-id="" aria-label="Delete student">
+                        <i class="fas fa-trash-alt"></i> Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM elements
+            const addStudentBtn = document.getElementById('addStudentBtn');
+            const addStudentModal = document.getElementById('addStudentModal');
+            const editStudentModal = document.getElementById('editStudentModal');
+            const deleteConfirmModal = document.getElementById('deleteConfirmModal');
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const closeButtons = document.querySelectorAll('.close, .modal-cancel');
+            const searchInput = document.getElementById('searchInput');
+            const searchBtn = document.getElementById('searchBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            const studentsTable = document.getElementById('studentsTable');
+            const noResults = document.getElementById('noResults');
+            const alertCloseBtn = document.querySelector('.alert .close-btn');
+            const sortableHeaders = document.querySelectorAll('.sortable');
+
+            let currentSort = {
+                field: '',
+                direction: 'asc'
+            };
+
+            // Show loading overlay
+            function showLoading() {
+                if (loadingOverlay) {
+                    loadingOverlay.classList.remove('hidden');
+                }
+            }
+
+            // Hide loading overlay
+            function hideLoading() {
+                if (loadingOverlay) {
+                    loadingOverlay.classList.add('hidden');
+                }
+            }
+
+            // Open modal
+            function openModal(modal) {
+                if (modal) {
+                    modal.classList.add('show');
+                    document.body.style.overflow = 'hidden';
+                }
+            }
+
+            // Close modal
+            function closeModal(modal) {
+                if (modal) {
+                    modal.classList.remove('show');
+                    document.body.style.overflow = '';
+
+                    // Reset form if exists
+                    const form = modal.querySelector('form');
+                    if (form) {
+                        form.reset();
+                        const errorMessages = form.querySelectorAll('.error-message');
+                        errorMessages.forEach(msg => {
+                            msg.textContent = '';
+                            msg.classList.remove('show');
+                        });
+                        const inputs = form.querySelectorAll('input');
+                        inputs.forEach(input => input.classList.remove('is-invalid'));
+                    }
+                }
+            }
+
+            // Close all modals
+            function closeAllModals() {
+                [addStudentModal, editStudentModal, deleteConfirmModal].forEach(modal => {
+                    if (modal) closeModal(modal);
+                });
+            }
+
+            // Open add student modal
+            if (addStudentBtn) {
+                addStudentBtn.addEventListener('click', function() {
+                    openModal(addStudentModal);
+                });
+            }
+
+            // Close button for modals
+            closeButtons.forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    closeAllModals();
+                });
+            });
+
+            // Close modals when clicking outside
+            window.addEventListener('click', function(event) {
+                if (event.target === addStudentModal) {
+                    closeModal(addStudentModal);
+                } else if (event.target === editStudentModal) {
+                    closeModal(editStudentModal);
+                } else if (event.target === deleteConfirmModal) {
+                    closeModal(deleteConfirmModal);
+                }
+            });
+
+            // Close alert
+            if (alertCloseBtn) {
+                alertCloseBtn.addEventListener('click', function() {
+                    const alert = this.parentElement;
+                    alert.style.opacity = '0';
+                    setTimeout(() => {
+                        alert.style.display = 'none';
+                    }, 300);
+                });
+            }
+
+            // Handle edit button clicks
+            function attachEditListeners() {
+                const editButtons = document.querySelectorAll('.edit-btn');
+                editButtons.forEach(function(btn) {
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        const studentId = this.getAttribute('data-id');
+                        showLoading();
+
+                        // Fetch student data
+                        fetch(`/students/${studentId}`)
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error('Failed to fetch student data');
+                                }
+                                return response.json();
+                            })
+                            .then(student => {
+                                // Populate the edit form
+                                document.getElementById('editStudentId').value = student._id;
+                                document.getElementById('editName').value = student.name;
+                                document.getElementById('editAge').value = student.age;
+                                document.getElementById('editEmail').value = student.email;
+                                document.getElementById('editBatch').value = student.batch;
+                                document.getElementById('editCourse').value = student.course;
+
+                                // Update form action
+                                document.getElementById('editStudentForm').action = `/students/${studentId}?_method=PUT`;
+
+                                // Hide loading and show modal
+                                hideLoading();
+                                openModal(editStudentModal);
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                hideLoading();
+                                alert('An error occurred while fetching student data');
+                            });
+                    });
+                });
+            }
+
+            // Handle delete button clicks
+            function attachDeleteListeners() {
+                const deleteButtons = document.querySelectorAll('.delete-btn');
+                deleteButtons.forEach(function(btn) {
+                    btn.addEventListener('click', function() {
+                        const studentId = this.getAttribute('data-id');
+                        document.getElementById('confirmDelete').setAttribute('data-id', studentId);
+                        openModal(deleteConfirmModal);
+                    });
+                });
+            }
+
+            // Handle delete confirmation
+            document.getElementById('confirmDelete').addEventListener('click', function() {
+                const studentId = this.getAttribute('data-id');
+                showLoading();
+                fetch(`/students/${studentId}?_method=DELETE`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                    .then(response => {
+                        if (response.ok) {
+                            closeModal(deleteConfirmModal);
+                            searchStudents();
+                        } else {
+                            alert('Failed to delete student');
+                        }
+                        hideLoading();
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        hideLoading();
+                        alert('An error occurred while deleting the student');
+                    });
+            });
+
+            // Initial attachment of listeners
+            attachEditListeners();
+            attachDeleteListeners();
+
+            // Form validation
+            const forms = document.querySelectorAll('form');
+            forms.forEach(function(form) {
+                form.addEventListener('submit', function(event) {
+                    let isValid = true;
+
+                    // Validate each required input
+                    const requiredInputs = form.querySelectorAll('input[required]');
+                    requiredInputs.forEach(function(input) {
+                        const errorMessage = input.nextElementSibling;
+
+                        // Reset error state
+                        input.classList.remove('is-invalid');
+                        if (errorMessage && errorMessage.classList.contains('error-message')) {
+                            errorMessage.textContent = '';
+                            errorMessage.classList.remove('show');
+                        }
+
+                        // Check if empty
+                        if (!input.value.trim()) {
+                            isValid = false;
+                            input.classList.add('is-invalid');
+                            if (errorMessage) {
+                                errorMessage.textContent = 'This field is required';
+                                errorMessage.classList.add('show');
+                            }
+                        }
+
+                        // Validate email format
+                        if (input.type === 'email' && input.value.trim()) {
+                            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                            if (!emailRegex.test(input.value.trim())) {
+                                isValid = false;
+                                input.classList.add('is-invalid');
+                                if (errorMessage) {
+                                    errorMessage.textContent = 'Please enter a valid email address';
+                                    errorMessage.classList.add('show');
+                                }
+                            }
+                        }
+
+                        // Validate age
+                        if (input.type === 'number' && input.name.includes('age')) {
+                            const age = parseInt(input.value);
+                            if (isNaN(age) || age < 15 || age > 100) {
+                                isValid = false;
+                                input.classList.add('is-invalid');
+                                if (errorMessage) {
+                                    errorMessage.textContent = 'Age must be between 15 and 100';
+                                    errorMessage.classList.add('show');
+                                }
+                            }
+                        }
+                    });
+
+                    if (!isValid) {
+                        event.preventDefault();
+                    } else {
+                        showLoading();
+                    }
+                });
+            });
+
+            // Real-time search functionality
+            let searchTimeout;
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(searchStudents, 300);
+            });
+
+            // Search button
+            searchBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                searchStudents();
+            });
+
+            // Clear button
+            clearBtn.addEventListener('click', function() {
+                searchInput.value = '';
+                searchStudents();
+            });
+
+            async function searchStudents() {
+                const query = searchInput.value.trim();
+
+                try {
+                    showLoading();
+                    const response = await fetch(`/search?q=${encodeURIComponent(query)}`);
+
+                    if (!response.ok) {
+                        throw new Error('Failed to search students');
+                    }
+
+                    const students = await response.json();
+                    updateStudentsTable(students);
+
+                    if (currentSort.field) {
+                        sortTable(currentSort.field, currentSort.direction);
+                    }
+
+                    hideLoading();
+                } catch (error) {
+                    console.error('Error:', error);
+                    hideLoading();
+                    alert('An error occurred while searching students');
+                }
+            }
+
+            // Sorting functionality
+            sortableHeaders.forEach(header => {
+                header.addEventListener('click', () => {
+                    const field = header.dataset.field;
+
+                    // Remove sorting classes from all headers
+                    sortableHeaders.forEach(h => {
+                        h.classList.remove('asc', 'desc');
+                    });
+
+                    // Toggle sort direction
+                    if (currentSort.field === field) {
+                        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        currentSort.field = field;
+                        currentSort.direction = 'asc';
+                    }
+
+                    // Add appropriate class
+                    header.classList.add(currentSort.direction);
+
+                    // Sort the table
+                    sortTable(field, currentSort.direction);
+                });
+            });
+
+            function sortTable(field, direction) {
+                const tbody = studentsTable.querySelector('tbody');
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+
+                const sortedRows = rows.sort((a, b) => {
+                    const aValue = a.children[getColumnIndex(field)].textContent;
+                    const bValue = b.children[getColumnIndex(field)].textContent;
+
+                    if (field === 'age') {
+                        return direction === 'asc'
+                            ? parseInt(aValue) - parseInt(bValue)
+                            : parseInt(bValue) - parseInt(aValue);
+                    }
+
+                    return direction === 'asc'
+                        ? aValue.localeCompare(bValue)
+                        : bValue.localeCompare(aValue);
+                });
+
+                // Clear the table
+                tbody.innerHTML = '';
+
+                // Add sorted rows
+                sortedRows.forEach(row => tbody.appendChild(row));
+
+                // Reattach event listeners
+                attachEditListeners();
+                attachDeleteListeners();
+            }
+
+            function getColumnIndex(field) {
+                const headers = Array.from(studentsTable.querySelectorAll('th'));
+                return headers.findIndex(header => header.dataset.field === field);
+            }
+
+            // Update students table with new data
+            function updateStudentsTable(students) {
+                const tbody = studentsTable.querySelector('tbody');
+                tbody.innerHTML = '';
+
+                if (students.length === 0) {
+                    studentsTable.classList.add('hidden');
+                    noResults.classList.remove('hidden');
+                    return;
+                }
+
+                studentsTable.classList.remove('hidden');
+                noResults.classList.add('hidden');
+
+                students.forEach(student => {
+                    const tr = document.createElement('tr');
+                    tr.setAttribute('data-id', student._id);
+
+                    tr.innerHTML = `
+                        <td>${student.name}</td>
+                        <td>${student.age}</td>
+                        <td>${student.email}</td>
+                        <td>${student.batch}</td>
+                        <td>${student.course}</td>
+                        <td class="actions">
+                            <button class="btn-icon edit-btn" data-id="${student._id}" aria-label="Edit student">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn-icon delete-btn" data-id="${student._id}" aria-label="Delete student">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    `;
+
+                    tbody.appendChild(tr);
+                });
+
+                // Reattach event listeners
+                attachEditListeners();
+                attachDeleteListeners();
+            }
+
+            // Auto-hide alerts after 5 seconds
+            const alerts = document.querySelectorAll('.alert');
+            if (alerts.length > 0) {
+                setTimeout(() => {
+                    alerts.forEach(alert => {
+                        alert.style.opacity = '0';
+                        setTimeout(() => {
+                            alert.style.display = 'none';
+                        }, 300);
+                    });
+                }, 5000);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -48,4 +48,14 @@ app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
 
-export default app;
+export default app; 
+
+
+
+let name : string = 'shibil'
+
+function getName(name:any):any{
+    if(typeof name === 'string'){
+      return name;
+    }
+}

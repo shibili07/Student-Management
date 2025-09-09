@@ -33,6 +33,7 @@
     "typescript": "^5.9.2"
   },
   "devDependencies": {
+    "@types/method-override": "^3.0.0",
     "nodemon": "^3.1.10"
   }
 }
